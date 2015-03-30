@@ -1,0 +1,27 @@
+Added Line 7 for boolean
+#include <stdbool.h>
+
+Added Line 31 for active account flag
+bool active;
+
+Added Lines 178-212 to see if any accounts have been created
+and to see if there are any active accounts if there has.
+	- Instead of the for loop in lines 197-200 we can use
+	if(userAccounts[userID]==true;
+		flagCheck++;
+	
+
+Added Lines 260-261 in 101 switch case to raise active account flag
+//Flag to label account as active to deposit/withdraw
+userAccounts[index].active=true;	
+
+Added Lines 769-773 (strcpy and bytes_sent wasn't there originally)
+case 801: 	printf("Client %d: Code 801 Logout\n", user);
+			strcpy(returnMsg, "803");
+			bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
+			
+			break;
+	
+Added Lines 786-788 to deactivate any active accounts
+	for(i=0;i<numAccounts;i++)
+		userAccounts[i].active==false;
