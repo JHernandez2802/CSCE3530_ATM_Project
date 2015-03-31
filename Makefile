@@ -1,28 +1,26 @@
 CC=gcc
 RUN=./
 CFLAGS=-g
-SFLAGS=-pthread -g
+SFLAGS=-l sqlite3 -pthread
+DFLAGS=-l sqlite3
 BIN=bin
 SRC=src
 COUT=c
 SOUT=s
+DOUT=db
 
-all: server client
-	$(CC) $(SFLAGS) $(BIN)/server.o -o $(SOUT)
-	$(CC) $(CFLAGS) $(BIN)/client.o -o $(COUT)
+all: database server client
 
 clean:
-	@rm -rf $(BIN)
 	@rm -rf $(SOUT)
 	@rm -rf $(COUT)
+	@rm -rf $(DOUT)
 
-init:
-	@mkdir -p $(BIN)
+server:
+	$(CC) $(SRC)/server.c $(SFLAGS) -o $(SOUT)
 
-server: init
-	$(CC) -c $(CFLAGS) $(SRC)/server.c -o $(BIN)/server.o
+client:
+	$(CC) $(SRC)/client.c $(CFLAGS) -o $(COUT)
 
-client: init
-	$(CC) -c $(CFLAGS) $(SRC)/client.c -o $(BIN)/client.o
-
-
+database:
+	$(CC) $(SRC)/createDB.c $(DFLAGS) -o $(DOUT)
