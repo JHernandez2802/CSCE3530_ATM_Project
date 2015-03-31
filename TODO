@@ -1,23 +1,7 @@
 To compile server: gcc -pthread -o s server.c
 To compile client: gcc -o c client.c
+To compile database: gcc createDB.c -l sqlite3 -o db
 
-1) you need whatever menus are necessary to interface with the user
-2) get the users request
-3) handle whatever there is on the client side
-4) format message for the server to handle whatever it needs to
-5) get the server response and output whatever is needed to the user
-
-The biggest problem I ran into was converting the buffer string from char 
-array to int and back.  You can look at the server to see how I parsed the 
-message (an array of char[BUF_SIZE] where each row is a separate entry)
-
- flag tied to account verification. 
- Once a user has verified their account 
- the flag becomes active, 
-	-client is then allowed to do regular atm activities. 
- If a user tries to do those things before verification
-	-check against the flag will result in an error prompting them to verify first. 
-	
-	I think that SHOULD work with the multiple thread setup since 
-	in that case all of the data checking lies on the client and 
-	no unnecessary communication happens between client and server
+Code 703 (server side)
+- Stamp failure does not send balance
+No 304 error code on server
