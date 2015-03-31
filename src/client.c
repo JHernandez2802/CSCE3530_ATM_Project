@@ -18,7 +18,7 @@
 // #define SERVER_PORT 53645
 
 void userDirections();
-void returnMsg(int code);
+void returnMsg(int code, int num);
 int convertStrToInt(char msg[BUF_SIZE], int size);
 int power(int num, int pow);
 
@@ -55,8 +55,8 @@ void userDirections(){
 	printf("********************************************************************* \n");
 }
 
-void returnMsg(int code){
-	switch (code)
+void returnMsg(int code, int balance){
+	switch (code){
 		case 103:
 			printf("Account creation failed: Entry error\n");
 			break;
@@ -76,10 +76,11 @@ void returnMsg(int code){
 			printf("Authentication successful\n");
 			break;
 		case 302:
-			printf("ATM Machine Full\nAttendant notified\n"");
+			printf("ATM Machine Full\nAttendant notified\n");
 			break;
 		case 303:
 			printf("Deposit successful\n");
+			printf("Current balance: %d\n",balance);
 			break;
 		case 304:
 			//failure + balance
@@ -89,27 +90,30 @@ void returnMsg(int code){
 			break;
 		case 403:
 			printf("Withdraw successful\n");
+			printf("Current balance: %d\n",balance);
 			break;
 		case 404:
 			printf("Withdraw failed. Funds low\n");
+			printf("Current balance: %d\n",balance);
 			break;
 		case 405:
 			printf(" ATM Empty\nAttendant notified\n");
 			break;
 		case 503:
-			printf("Balance:\n");
+			printf("Balance: %d\n",balance);
 			break;
 		case 603:
-			printf("Transactions sent\n");
+			//printf("Transactions sent\n");
 			break;
 		case 702:
 			printf("Out of stamps\nAttendant notified\n");
 			break;
 		case 703:
-			printf("Stamps Withdraw failed. Funds low:\n");
+			printf("Stamps Withdraw failed. Funds low\n");
 			break;
 		case 704:
-			printf("Stamps Withdraw successful: Balance: \n");
+			printf("Stamps Withdraw successful\n"); 
+			printf("Balance: %d\n",balance);
 			break;
 		case 705:
 			printf("Out of stamps\nAttendant notified\n");
@@ -120,15 +124,18 @@ void returnMsg(int code){
 		case 908:
 			printf("Error: Missing fields\n");
 			break;
-		case 909:
+		default:
 			printf("Unknown Code\n");
 			break;
+	}
 		
 }
+
 int convertStrToInt(char msg[BUF_SIZE], int size)
 {
 	int numTotal = 0, numTemp = 0, i = 0;
-	
+	if(size >3)
+		i=3;
 	while (i < size)
 	{
 		switch (msg[i])
@@ -181,7 +188,7 @@ int main(int argc, char *argv[])
 {
     int sock_send;
     struct sockaddr_in	addr_send;
-    int	i,returnCode;
+    int	i,returnCode,balance;
     char text[BUF_SIZE], buf[BUF_SIZE];
     int	send_len, bytes_sent, bytes_received;
 
@@ -237,11 +244,21 @@ int main(int argc, char *argv[])
 		// Receive data
 		bytes_received = recv(sock_send, buf, BUF_SIZE, 0);
         buf[bytes_received] = 0;
-        printf("Received: %s\n", buf);
+        //printf("Received: %s\n", buf);
 		
-		returnCode = convertStrToInt(buf, strlen(buf)); // Turns code into number
+		// Turns code into number
+		returnCode = convertStrToInt(buf, 3);
+		if(returnCode == 603 )
+			printf("Received: %s\n", buf);
+		else
+			balance = convertStrToInt(buf, strlen(buf));
 		
-		printf("code = %d\n",returnCode);
+		//printf("return code = %d\n",returnCode);
+		//printf("test = %d\n",test);
+		
+		//Handles returnCode
+		returnMsg(returnCode,balance);
+		
 		if(strcmp(buf,"803") == 0)
 			break;
     }
