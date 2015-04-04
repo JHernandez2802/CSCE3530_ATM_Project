@@ -18,7 +18,7 @@
 // #define SERVER_PORT 53645
 
 void userDirections();
-void returnMsg(int code, int num);
+void returnMsg(int code, int num,char *msg);
 int convertStrToInt(char msg[BUF_SIZE], int size);
 int power(int num, int pow);
 
@@ -55,7 +55,8 @@ void userDirections(){
 	printf("********************************************************************* \n");
 }
 
-void returnMsg(int code, int balance){
+void returnMsg(int code, int balance,char* msg){
+	int i;
 	switch (code){
 		case 103:
 			printf("Account creation failed: Entry error\n");
@@ -90,7 +91,7 @@ void returnMsg(int code, int balance){
 			break;
 		case 403:
 			printf("Withdraw successful\n");
-			printf("Current balance: %d\n",balance);
+			printf("Current balance: %c\n",balance);
 			break;
 		case 404:
 			printf("Withdraw failed. Funds low\n");
@@ -103,7 +104,10 @@ void returnMsg(int code, int balance){
 			printf("Balance: %d\n",balance);
 			break;
 		case 603:
-			//printf("Transactions sent\n");
+			printf("List of %c Transactions sent\n",msg[4]);
+			for(i=6;i<strlen(msg);i++)
+				printf("%c",msg[i]);
+			printf("\n");
 			break;
 		case 702:
 			printf("Out of stamps\nAttendant notified\n");
@@ -246,18 +250,12 @@ int main(int argc, char *argv[])
         buf[bytes_received] = 0;
         //printf("Received: %s\n", buf);
 		
-		// Turns code into number
+		// Turns code and balance into int's
 		returnCode = convertStrToInt(buf, 3);
-		if(returnCode == 603 )
-			printf("Received: %s\n", buf);
-		else
-			balance = convertStrToInt(buf, strlen(buf));
-		
-		//printf("return code = %d\n",returnCode);
-		//printf("test = %d\n",test);
+		balance = convertStrToInt(buf, strlen(buf));
 		
 		//Handles returnCode
-		returnMsg(returnCode,balance);
+		returnMsg(returnCode,balance,buf);
 		
 		if(strcmp(buf,"803") == 0)
 			break;
