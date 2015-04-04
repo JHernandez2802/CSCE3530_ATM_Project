@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -10,9 +11,9 @@
 #define BUF_SIZE	1024
 // #define	SERVER_IP	"129.120.151.98" // cse05
 // #define	SERVER_IP	"129.120.151.97" // cse04
-#define	SERVER_IP	"129.120.151.96" // cse03
+// #define	SERVER_IP	"129.120.151.96" // cse03
 // #define	SERVER_IP	"129.120.151.95" // cse02
-// #define	SERVER_IP	"129.120.151.94" // cse01
+#define	SERVER_IP	"129.120.151.94" // cse01
 
 #define SERVER_PORT	60000
 // #define SERVER_PORT 53645
@@ -21,6 +22,7 @@ void userDirections();
 void returnMsg(int code, int num,char *msg);
 int convertStrToInt(char msg[BUF_SIZE], int size);
 int power(int num, int pow);
+bool loggedIn = false;
 
 void userDirections(){
 	printf("********************************************************************* \n");
@@ -75,6 +77,7 @@ void returnMsg(int code, int balance,char* msg){
 			break;
 		case 205:
 			printf("Authentication successful\n");
+			loggedIn = true;
 			break;
 		case 302:
 			printf("ATM Machine Full\nAttendant notified\n");
@@ -98,7 +101,7 @@ void returnMsg(int code, int balance,char* msg){
 			printf("Current balance: %d\n",balance);
 			break;
 		case 405:
-			printf(" ATM Empty\nAttendant notified\n");
+			printf("ATM Empty\nAttendant notified\n");
 			break;
 		case 503:
 			printf("Balance: %d\n",balance);
@@ -124,6 +127,7 @@ void returnMsg(int code, int balance,char* msg){
 			break;
 		case 803:
 			printf("Client disconnected.\nGood Bye\n");
+			loggedIn = false;
 			break;
 		case 908:
 			printf("Error: Missing fields\n");
@@ -241,6 +245,16 @@ int main(int argc, char *argv[])
 
 		// Send data
         strcpy(buf,text);
+
+        //make sure user is logged in before sending account-related queries
+        int testCode = convertStrToInt(buf, 3);
+        if(testCode > 201 && testCode < 801 && loggedIn == false){
+        	printf("You must be logged in to perform this action.\n"\
+        			"Please authenticate an account.\n");
+        	continue;
+
+        }
+
         send_len = strlen(text);
         if(bytes_sent = send(sock_send,buf, send_len, 0))
 		printf("Sent: %s\n", buf);
