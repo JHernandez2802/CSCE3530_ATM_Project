@@ -94,7 +94,7 @@ void returnMsg(int code, int balance,char* msg){
 			break;
 		case 403:
 			printf("Withdraw successful\n");
-			printf("Current balance: %c\n",balance);
+			printf("Current balance: %d\n",balance);
 			break;
 		case 404:
 			printf("Withdraw failed. Funds low\n");
@@ -120,7 +120,7 @@ void returnMsg(int code, int balance,char* msg){
 			break;
 		case 704:
 			printf("Stamps Withdraw successful\n"); 
-			printf("Balance: %d\n",balance);
+			printf("Balance: %d\n", balance);
 			break;
 		case 705:
 			printf("Out of stamps\nAttendant notified\n");
@@ -136,7 +136,7 @@ void returnMsg(int code, int balance,char* msg){
 			printf("Unknown Code\n");
 			break;
 	}
-		
+		printf("\n");
 }
 
 int convertStrToInt(char msg[BUF_SIZE], int size)
@@ -231,17 +231,13 @@ int main(int argc, char *argv[])
 		if(text[4] == '\0' || text[2] == '\0' )
 			userDirections();
 	
+	printf("\n");
+	
     while (1)
 	{
-        // Sample to show how to send data
-		// Use "shutdown" to close connection with server and "quit" to exit client
         printf("Send? ");
-        //scanf("%s",text);
+        
         fgets(text, sizeof(text), stdin);
-	
-		
-		// Get request from user
-		// TODO get request
 
 		// Send data
         strcpy(buf,text);
@@ -250,14 +246,18 @@ int main(int argc, char *argv[])
         int testCode = convertStrToInt(buf, 3);
         if(testCode > 201 && testCode < 801 && loggedIn == false){
         	printf("You must be logged in to perform this action.\n"\
-        			"Please authenticate an account.\n");
+        			"Please authenticate an account.\n\n");
         	continue;
 
         }
 
+		if(testCode <= 201 && loggedIn == true){
+        	printf("You are already logged in.\n\n");
+        	continue;
+        }
+		
         send_len = strlen(text);
-        if(bytes_sent = send(sock_send,buf, send_len, 0))
-		printf("Sent: %s\n", buf);
+        bytes_sent = send(sock_send,buf, send_len, 0);
 		
 		// Receive data
 		bytes_received = recv(sock_send, buf, BUF_SIZE, 0);

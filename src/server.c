@@ -135,6 +135,15 @@ void *client_handler(void *sock_desc)
 	
 	rc = sqlite3_open("group3db.db", &db);
 	
+	// Erasing values
+	strcpy(account.fName, "\0");
+	strcpy(account.lName, "\0");
+	strcpy(account.ssn, "\0");
+	strcpy(account.pin, "\0");
+	strcpy(account.dl, "\0");
+	strcpy(account.email, "\0");
+	account.balance = 0;
+	
 	while ((msg_size = recv(sock, buf, BUF_SIZE, 0)) > 0)
 	{// Receives data
         buf[msg_size - 1] = 0;
@@ -316,7 +325,7 @@ void *client_handler(void *sock_desc)
 						
 						// Sends responce to client
 						bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
-						printf("Client %d: Deposit successful: Amount [%d] New Balance[%d]\n", 
+						printf("Client %d: Deposit successful: Amount [%d] New Balance [%d]\n", 
 						user, amount, account.balance);
 						
 						break;
@@ -348,7 +357,7 @@ void *client_handler(void *sock_desc)
 						if (amount > account.balance)
 						{
 							sprintf(returnMsg, "404 %d", account.balance);
-							printf("Client %d: Withdraw failed. Funds low: Balance[%d]\n", 
+							printf("Client %d: Withdraw failed. Funds low: Balance [%d]\n", 
 						           user, account.balance);
 								   
 							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
@@ -358,7 +367,7 @@ void *client_handler(void *sock_desc)
 						{
 							account.balance -= amount;
 							sprintf(returnMsg, "403 %d", account.balance);
-							printf("Client %d: Withdraw successful: Amount [%d] New Balance[%d]\n", 
+							printf("Client %d: Withdraw successful: Amount [%d] New Balance [%d]\n", 
 							user, amount, account.balance);
 							
 							// Records transaction in DB
@@ -395,7 +404,7 @@ void *client_handler(void *sock_desc)
 						
 						// Sends responce to client
 						bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
-						printf("Client %d: Balance: %d\n", user, account.balance);
+						printf("Client %d: Balance: [%d]\n", user, account.balance);
 						
 						break;
 //***********************************************************************************************************
@@ -462,7 +471,7 @@ void *client_handler(void *sock_desc)
 						if (amount > account.balance)
 						{
 							sprintf(returnMsg, "703 %d", account.balance);
-							printf("Client %d: Stamps Withdraw failed. Funds low: Balance[%d]\n", 
+							printf("Client %d: Stamps Withdraw failed. Funds low: Balance [%d]\n", 
 						           user, account.balance);
 								   
 							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
@@ -472,7 +481,7 @@ void *client_handler(void *sock_desc)
 						{
 							account.balance -= amount;
 							sprintf(returnMsg, "704 %d", account.balance);
-							printf("Client %d: Stamps Withdraw successful: Amount [%d] New Balance[%d]\n", 
+							printf("Client %d: Stamps Withdraw successful: Amount [%d] New Balance [%d]\n", 
 							user, amount, account.balance);
 							
 							// Records transaction in DB
