@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <sqlite3.h>    // for SQLite
 #include <sys/types.h>	// system type defintions
 #include <sys/socket.h>	// network system functions
@@ -46,6 +47,7 @@ static int getTransactions(void *NotUsed, int argc, char **argv, char **azColNam
 int convertStrToInt(char msg[BUF_SIZE], int size);
 int findSpace(char msg[BUF_SIZE]);
 int power(int num, int pow);
+bool isInt (char msg[BUF_SIZE]);
 
 int main(int argc, char *argv[])
 {
@@ -205,8 +207,9 @@ void *client_handler(void *sock_desc)
 							break;
 						}
 						
-						if (strlen(strArr[1]) >= 20 || strlen(strArr[2]) >= 20 || strlen(strArr[3]) != 4 || 
-						    strlen(strArr[4]) != 8 || strlen(strArr[5]) != 9 || strlen(strArr[6]) >= 40)
+						if (strlen(strArr[1]) > 20 || strlen(strArr[2]) > 20 || strlen(strArr[3]) != 4 || 
+						    strlen(strArr[4]) != 8 || strlen(strArr[5]) != 9 || strlen(strArr[6]) > 40 ||
+							!isInt(strArr[3]) || !isInt(strArr[4]) || !isInt(strArr[5]))
 						{// Checks for correct size of entries
 							strcpy(returnMsg, "103");
 							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
@@ -308,6 +311,14 @@ void *client_handler(void *sock_desc)
 							break;
 						}
 						
+						if (!isInt(strArr[1]))
+						{// Checks for correct size of entries
+							strcpy(returnMsg, "304");
+							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
+							printf("Client %d: Deposit failed: Entry error\n", user);
+							break;
+						}
+						
 						// Converts strArr amount to int and adds amount to balance of current customer
 						amount = convertStrToInt(strArr[1], strlen(strArr[1]));
 						account.balance += amount;
@@ -337,8 +348,15 @@ void *client_handler(void *sock_desc)
 //***********************************************************************************************************
 //***********************************************************************************************************
 			case 302: 	printf("Client %d: Code 302 ATM Machine Full\n", user);
+						if (count2 != 0)
+						{// Checks for correct number of entries
+							strcpy(returnMsg, "908");
+							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
+							printf("Client %d: ATM empty request failed: Too many fields\n", user);
+							break;
+						}
 						
-						sprintf(returnMsg, "405 %d", account.balance);
+						sprintf(returnMsg, "305 %d", account.balance);
 						
 						// Sends responce to client
 						bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
@@ -359,7 +377,7 @@ void *client_handler(void *sock_desc)
 						// Converts strArr amount to int and subtracts amount from balance if possible
 						amount = convertStrToInt(strArr[1], strlen(strArr[1]));
 						
-						if (amount > account.balance)
+						if (amount > account.balance || !isInt(strArr[1]))
 						{
 							sprintf(returnMsg, "404 %d", account.balance);
 							printf("Client %d: Withdraw failed. Funds low: Balance [%d]\n", 
@@ -396,6 +414,14 @@ void *client_handler(void *sock_desc)
 //***********************************************************************************************************
 //***********************************************************************************************************
 			case 402: 	printf("Client %d: Code 402 ATM Empty\n", user);
+						if (count2 != 0)
+						{// Checks for correct number of entries
+							strcpy(returnMsg, "908");
+							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
+							printf("Client %d: ATM refill request failed: Too many fields\n", user);
+							break;
+						}
+			
 						strcpy(returnMsg, "405");
 						bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
 						printf("Client %d: Attendant notified\n", user);
@@ -404,6 +430,13 @@ void *client_handler(void *sock_desc)
 //***********************************************************************************************************
 //***********************************************************************************************************
 			case 501: 	printf("Client %d: Code 501 Balance Query\n", user);
+						if (count2 != 0)
+						{// Checks for correct number of entries
+							strcpy(returnMsg, "908");
+							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
+							printf("Client %d: Balance query failed: Too many fields\n", user);
+							break;
+						}
 						
 						sprintf(returnMsg, "503 %d", account.balance);
 						
@@ -420,6 +453,14 @@ void *client_handler(void *sock_desc)
 							strcpy(returnMsg, "908");
 							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
 							printf("Client %d: transaction request failed: Missing fields\n", user);
+							break;
+						}
+						
+						if (!isInt(strArr[1]))
+						{// Checks for correct size of entries
+							strcpy(returnMsg, "908");
+							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
+							printf("Client %d: Transaction failed: Entry error\n", user);
 							break;
 						}
 						
@@ -473,7 +514,7 @@ void *client_handler(void *sock_desc)
 						// Converts strArr amount to int and subtracts amount from balance if possible
 						amount = convertStrToInt(strArr[1], strlen(strArr[1]));
 						
-						if (amount > account.balance)
+						if (amount > account.balance || !isInt(strArr[1]))
 						{
 							sprintf(returnMsg, "703 %d", account.balance);
 							printf("Client %d: Stamps Withdraw failed. Funds low: Balance [%d]\n", 
@@ -510,6 +551,14 @@ void *client_handler(void *sock_desc)
 //***********************************************************************************************************
 //***********************************************************************************************************
 			case 702: 	printf("Client %d: Code 702 Out of stamps\n", user);
+						if (count2 != 0)
+						{// Checks for correct number of entries
+							strcpy(returnMsg, "908");
+							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
+							printf("Client %d: Stamp refill request failed: Too many fields\n", user);
+							break;
+						}
+						
 						strcpy(returnMsg, "705");
 						bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
 						printf("Client %d: Attendant notified\n", user);
@@ -518,7 +567,14 @@ void *client_handler(void *sock_desc)
 //***********************************************************************************************************
 //***********************************************************************************************************
 			case 801: 	printf("Client %d: Code 801 Logout\n", user);
-			
+						if (count2 != 0)
+						{// Checks for correct number of entries
+							strcpy(returnMsg, "908");
+							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
+							printf("Client %d: logout failed: Too many fields\n", user);
+							code = 802;
+							break;
+						}
 						break;
 //***********************************************************************************************************
 //***********************************************************************************************************
@@ -530,7 +586,7 @@ void *client_handler(void *sock_desc)
 //***********************************************************************************************************
 		}// end switch
 		
-        if (strcmp(buf, "801") == 0)
+        if (code == 801)
 		{
 			strcpy(returnMsg, "803");
 			bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
@@ -640,4 +696,21 @@ int power(int num, int pow)
 		pow--;
 	}
 	return num;
+}
+
+bool isInt (char msg[BUF_SIZE])
+{
+	int index = 0;
+	while (index < strlen(msg))
+	{
+		if (!(msg[index] == '0' || msg[index] == '1' || msg[index] == '2' ||
+		      msg[index] == '3' || msg[index] == '4' || msg[index] == '5' ||
+			  msg[index] == '6' || msg[index] == '7' || msg[index] == '8' ||
+			  msg[index] == '9'))
+		{
+			return false;
+		}
+		index++;
+	}
+	return true;
 }

@@ -87,7 +87,7 @@ void returnMsg(int code, int balance,char* msg){
 			printf("Current balance: %d\n",balance);
 			break;
 		case 304:
-			//failure + balance
+			printf("Deposit failed. Entry error\n");
 			break;
 		case 402:
 			printf(" ATM Empty\nAttendant notified\n");
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
 		//Handles returnCode
 		returnMsg(returnCode,balance,buf);
 		
-		if(strcmp(buf,"803") == 0)
+		if(strcmp(buf,"803") == 0 || strcmp(buf,"204") == 0)
 			break;
     }
 
