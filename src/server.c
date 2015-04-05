@@ -1,5 +1,9 @@
+// Author: Jason Byrd
+// Date: 4-4-2015
+// Description: Multithreaded server with 2-way communications for ATM.
+
 // compile with: gcc server.c -l sqlite3 -pthread -o s    add -w to ignore warnings
-// Multiple server-client connection; two way communication
+
 	
 #include <string.h>
 #include <stdlib.h>
@@ -115,9 +119,10 @@ int main(int argc, char *argv[])
     close(sock_listen);
 }
 
+// Handles new thread indicating a new client
 void *client_handler(void *sock_desc)
 {
-	// used for SQLite
+	// Used for SQLite
 	sqlite3 *db;
 	char *zErrMsg = 0;
 	int rc;
@@ -200,8 +205,8 @@ void *client_handler(void *sock_desc)
 							break;
 						}
 						
-						if (strlen(strArr[1]) > 20 || strlen(strArr[2]) > 20 || strlen(strArr[3]) != 4 || 
-						    strlen(strArr[4]) != 8 || strlen(strArr[5]) > 9 || strlen(strArr[6]) > 40)
+						if (strlen(strArr[1]) >= 20 || strlen(strArr[2]) >= 20 || strlen(strArr[3]) != 4 || 
+						    strlen(strArr[4]) != 8 || strlen(strArr[5]) != 9 || strlen(strArr[6]) >= 40)
 						{// Checks for correct size of entries
 							strcpy(returnMsg, "103");
 							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
@@ -461,7 +466,7 @@ void *client_handler(void *sock_desc)
 						{// Checks for correct number of entries
 							strcpy(returnMsg, "908");
 							bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
-							printf("Client %d: Deposit failed: Missing fields\n", user);
+							printf("Client %d: Stamps withdraw failed: Missing fields\n", user);
 							break;
 						}
 						
@@ -542,6 +547,7 @@ void *client_handler(void *sock_desc)
     pthread_exit("Thank you for the CPU time");
 }
 
+// Gets the record from SQL database
 static int getRecord(void *NotUsed, int argc, char **argv, char **azColName){
 	
 	strcpy(account.ssn, argv[0]);
@@ -555,6 +561,7 @@ static int getRecord(void *NotUsed, int argc, char **argv, char **azColName){
 	return 0;
 }
 
+// Gets the transactions from SQL database
 static int getTransactions(void *NotUsed, int argc, char **argv, char **azColName){
 	
 	strcpy(account.userTransactions[account.numTransactions].amount, argv[2]);
@@ -565,6 +572,7 @@ static int getTransactions(void *NotUsed, int argc, char **argv, char **azColNam
 	return 0;
 }
 
+// Converts a char array to int
 int convertStrToInt(char msg[BUF_SIZE], int size)
 {
 	int numTotal = 0, numTemp = 0, i = 0;
@@ -603,6 +611,7 @@ int convertStrToInt(char msg[BUF_SIZE], int size)
 	return numTotal;
 }
 
+// Finds the first space in char array
 int findSpace(char msg[BUF_SIZE])
 {
 	int count = 0;
@@ -618,6 +627,7 @@ int findSpace(char msg[BUF_SIZE])
 		return count;
 }
 
+// Takes an int to an int power and returns an int
 int power(int num, int pow)
 {	
 	int tempNum = num;
