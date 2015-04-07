@@ -11,9 +11,9 @@
 #define BUF_SIZE	1024
 // #define	SERVER_IP	"129.120.151.98" // cse05
 // #define	SERVER_IP	"129.120.151.97" // cse04
-// #define	SERVER_IP	"129.120.151.96" // cse03
+#define	SERVER_IP	"129.120.151.96" // cse03
 // #define	SERVER_IP	"129.120.151.95" // cse02
-#define	SERVER_IP	"129.120.151.94" // cse01
+// #define	SERVER_IP	"129.120.151.94" // cse01
 
 #define SERVER_PORT	60000
 // #define SERVER_PORT 53645
@@ -225,11 +225,24 @@ int main(int argc, char *argv[])
 
 	//Prompts user is they would like to display 
 	//directions on how to use the ATM.
-	printf("Would you like to see the directions? ");
-	fgets(text, sizeof(text), stdin);
-	if (strncmp(text,"yes",3) == 0 || strncmp(text,"y",1) == 0 )
-		if(text[4] == '\0' || text[2] == '\0' )
-			userDirections();
+	
+	while(1){
+		printf("Would you like to see the directions?(yes/no) ");
+		fgets(text, sizeof(text), stdin);
+		if (strncmp(text,"no",2) == 0){
+			if(text[3] == '\0')
+				break;
+		}
+		else
+		if (strncmp(text,"yes",3) == 0){
+			if(text[4] == '\0'){
+				userDirections();
+				break;
+			}
+		}
+		else
+			printf("Response invalid.\n");
+	}
 	
 	printf("\n");
 	
