@@ -38,7 +38,7 @@ typedef struct userAccount
 };
 
 int threadCount = 0;
-struct userAccount account;
+struct userAccount tempAccount;
 
 
 void *client_handler(void *arg);
@@ -48,6 +48,7 @@ int convertStrToInt(char msg[BUF_SIZE], int size);
 int findSpace(char msg[BUF_SIZE]);
 int power(int num, int pow);
 bool isInt (char msg[BUF_SIZE]);
+void eraseTempValues();
 
 int main(int argc, char *argv[])
 {
@@ -134,6 +135,7 @@ void *client_handler(void *sock_desc)
 	int msg_size, bytes_sent;
 	char buf[BUF_SIZE], returnMsg[BUF_SIZE], strArr[10][BUF_SIZE];
 	int sock = *(int*)sock_desc;
+	struct userAccount account; // Local struct
 	int user = threadCount; // Gets user number
 	int index, amount, authentication = 0, code =0;
 	int count1, count2, count3;
@@ -151,8 +153,10 @@ void *client_handler(void *sock_desc)
 	strcpy(account.email, "\0");
 	account.balance = 0;
 	
+	
 	while ((msg_size = recv(sock, buf, BUF_SIZE, 0)) > 0)
 	{// Receives data
+		eraseTempValues();
         buf[msg_size - 1] = 0;
 		
 		// Clears values in strArr
@@ -222,7 +226,9 @@ void *client_handler(void *sock_desc)
 						strcat(strSql, strArr[5]);
 						strcat(strSql, "'");
 						sql = &strSql[0];
+						
 						rc = sqlite3_exec(db, sql, getRecord, (void*)data, &zErrMsg); // Executes SQL statement
+						account = tempAccount; // Gets global tempAcount values stored locally
 						
 						if (account.ssn[0] != '\0')
 						{// Account was found
@@ -273,6 +279,7 @@ void *client_handler(void *sock_desc)
 						
 						sql = &strSql[0];
 						rc = sqlite3_exec(db, sql, getRecord, (void*)data, &zErrMsg); // Executes SQL statement
+						account = tempAccount; // Gets global tempAcount values stored locally
 						
 						if (account.ssn[0] != '\0')
 						{
@@ -298,7 +305,7 @@ void *client_handler(void *sock_desc)
 								strcpy(buf, "801");
 							}
 						}
-						
+												
 						break;
 //***********************************************************************************************************
 //***********************************************************************************************************
@@ -318,7 +325,7 @@ void *client_handler(void *sock_desc)
 							printf("Client %d: Deposit failed: Entry error\n", user);
 							break;
 						}
-						
+												
 						// Converts strArr amount to int and adds amount to balance of current customer
 						amount = convertStrToInt(strArr[1], strlen(strArr[1]));
 						account.balance += amount;
@@ -328,7 +335,7 @@ void *client_handler(void *sock_desc)
 						// Records transaction in DB
 						sprintf(strSql, "UPDATE customer SET balance=%d WHERE ssn=%s;", 
 						        account.balance, account.ssn);
-						
+												
 						sql = &strSql[0];
 						
 						rc = sqlite3_exec(db, sql, getRecord, (void*)data, &zErrMsg); // Executes SQL statement
@@ -400,7 +407,7 @@ void *client_handler(void *sock_desc)
 							sql = &strSql[0];
 						
 							rc = sqlite3_exec(db, sql, getRecord, (void*)data, &zErrMsg); // Executes SQL statement
-						
+							
 							sprintf(strSql, "INSERT INTO transactions (customer_ssn,amount,type) VALUES ('%s',%d,'withdraw');", account.ssn, amount);
 						
 							sql = &strSql[0];
@@ -437,13 +444,13 @@ void *client_handler(void *sock_desc)
 							printf("Client %d: Balance query failed: Too many fields\n", user);
 							break;
 						}
-						
+												
 						sprintf(returnMsg, "503 %d", account.balance);
 						
 						// Sends responce to client
 						bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
 						printf("Client %d: Balance: [%d]\n", user, account.balance);
-						
+												
 						break;
 //***********************************************************************************************************
 //***********************************************************************************************************
@@ -467,6 +474,14 @@ void *client_handler(void *sock_desc)
 						char tempStr[BUF_SIZE];
 						int trans;
 						
+						strcpy(tempAccount.ssn, account.ssn);
+						strcpy(tempAccount.fName, account.fName);
+						strcpy(tempAccount.lName, account.lName);
+						strcpy(tempAccount.pin, account.pin);
+						strcpy(tempAccount.dl, account.dl);
+						strcpy(tempAccount.email, account.email);
+						tempAccount.balance = account.balance;
+						
 						sprintf(strSql,"SELECT * from transactions where customer_ssn='%s' ORDER BY id DESC LIMIT 5",
 						                account.ssn);
 						
@@ -475,6 +490,7 @@ void *client_handler(void *sock_desc)
 						account.numTransactions = 0;
 						
 						rc = sqlite3_exec(db, sql, getTransactions, (void*)data, &zErrMsg); // Executes SQL statement
+						account = tempAccount; // Transfers global account transactions to local account
 						
 						trans = convertStrToInt(strArr[1], strlen(strArr[1]));
 						
@@ -537,7 +553,7 @@ void *client_handler(void *sock_desc)
 							sql = &strSql[0];
 						
 							rc = sqlite3_exec(db, sql, getRecord, (void*)data, &zErrMsg); // Executes SQL statement
-						
+							
 							sprintf(strSql, "INSERT INTO transactions (customer_ssn,amount,type) VALUES ('%s',%d,'stamps');", account.ssn, amount);
 						
 							sql = &strSql[0];
@@ -592,7 +608,8 @@ void *client_handler(void *sock_desc)
 			bytes_sent = send(sock, returnMsg, strlen(returnMsg), 0);
             break;
 		}
-		
+				
+		eraseTempValues();
     }// end while
 	
 	printf("Client %d disconnected. Exiting thread.\n", user);
@@ -606,13 +623,13 @@ void *client_handler(void *sock_desc)
 // Gets the record from SQL database
 static int getRecord(void *NotUsed, int argc, char **argv, char **azColName){
 	
-	strcpy(account.ssn, argv[0]);
-	strcpy(account.fName, argv[1]);
-	strcpy(account.lName, argv[2]);
-	strcpy(account.pin, argv[3]);
-	strcpy(account.dl, argv[4]);
-	strcpy(account.email, argv[5]);
-	account.balance = convertStrToInt(argv[6], strlen(argv[6]));
+	strcpy(tempAccount.ssn, argv[0]);
+	strcpy(tempAccount.fName, argv[1]);
+	strcpy(tempAccount.lName, argv[2]);
+	strcpy(tempAccount.pin, argv[3]);
+	strcpy(tempAccount.dl, argv[4]);
+	strcpy(tempAccount.email, argv[5]);
+	tempAccount.balance = convertStrToInt(argv[6], strlen(argv[6]));
 		
 	return 0;
 }
@@ -620,10 +637,10 @@ static int getRecord(void *NotUsed, int argc, char **argv, char **azColName){
 // Gets the transactions from SQL database
 static int getTransactions(void *NotUsed, int argc, char **argv, char **azColName){
 	
-	strcpy(account.userTransactions[account.numTransactions].amount, argv[2]);
-	strcpy(account.userTransactions[account.numTransactions].description, argv[3]);
+	strcpy(tempAccount.userTransactions[tempAccount.numTransactions].amount, argv[2]);
+	strcpy(tempAccount.userTransactions[tempAccount.numTransactions].description, argv[3]);
 	
-	account.numTransactions++;
+	tempAccount.numTransactions++;
 	
 	return 0;
 }
@@ -713,4 +730,26 @@ bool isInt (char msg[BUF_SIZE])
 		index++;
 	}
 	return true;
+}
+
+void eraseTempValues()
+{
+	int i = 0;
+	
+	strcpy(tempAccount.fName, "\0");
+	strcpy(tempAccount.lName, "\0");
+	strcpy(tempAccount.ssn, "\0");
+	strcpy(tempAccount.pin, "\0");
+	strcpy(tempAccount.dl, "\0");
+	strcpy(tempAccount.email, "\0");
+	tempAccount.balance = 0;
+	tempAccount.numTransactions = 0;
+	
+	while (i < 5)
+	{
+		strcpy(tempAccount.userTransactions[i].description, "\0");
+		strcpy(tempAccount.userTransactions[i].amount, "\0");
+		i++;
+	}
+	
 }
